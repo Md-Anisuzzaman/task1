@@ -1,59 +1,67 @@
-import { Container } from '@mui/material';
-import Pagination from '@mui/material/Pagination';
-import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import { useEffect, useState } from 'react';
-import './App.css';
-
-
+import { Button, Container } from "@mui/material";
+// import Pagination from "@mui/material/Pagination";
+import Paper from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import "./App.css";
 
 function App() {
   const [data, setData] = useState([]);
+  const [selectedData, setselectedData] = useState([]);
   const [page, setPage] = useState(0);
   const [Pagination, setPagination] = useState([]);
   // let [page, setPage] = useState(0);
   // let page = 0;
-  const API_URL =
-    `https://hn.algolia.com/api/v1/search_by_date?tags=story&page=${page}`;
+  const API_URL = `https://hn.algolia.com/api/v1/search_by_date?tags=story&page=${page}`;
 
   // useEffect(() => {
   //    fetch(`https://hn.algolia.com/api/v1/search_by_date?tags=story&page=0`)
 
-
   useEffect(() => {
-    setInterval(() => dataFatcher(API_URL), 5000);
+    window.page = 0;
+    call_interval();
   }, []);
 
-  const dataFatcher = async (url) => {
-    // let tempData = data;
-    await fetch(url)
-      .then((res) => res.json())
-      .then((d) => {
-        setData(d.hits)
-        let temp = [...data];
-        temp.push(d.hits);
-        setPage(page + 1);
-        let tempPaginition = [...Pagination];
-        tempPaginition.push(page + 1);
-        setPagination(tempPaginition);
-      });
-    // setData(tempData)
+  useEffect(() => {
+    setPage(page + 1);
+    let tempPaginition = [...Pagination];
+    tempPaginition.push(page + 1);
+    setPagination(tempPaginition);
+    console.log('updated data ', data);
+  }, [data]);
 
+  const call_interval = () => {
+    window.data = [];
+    setselectedData(data[0]);
+    setInterval(() => {
+      set_data()
+      window.page++
+    }, 10000);
+  };
+
+  const set_data = () => {
+    axios.get(`https://hn.algolia.com/api/v1/search_by_date?tags=story&page=${window.page}`)
+      .then(res => {
+        let hits = res.data.hits;
+        // setInterval(() => {
+        //  window.page++;
+        //  }, 15000);
+        //window.page++;
+        window.data.push(hits);
+        setData([...window.data]);
+      })
   }
-
-  console.log(page);
-  const handlePageClick = async (page) => {
-    await fetch(`https://hn.algolia.com/api/v1/search_by_date?tags=story&page=${page}`)
-      .then((res) => res.json())
-      .then((d) => setData(d.hits));
+  const set_view_data = (pageNO) => {
+    // console.log(pageNO, data[pageNO]);
+    setselectedData(data[pageNO]);
   }
-
   return (
     <div className="App">
       {
@@ -62,43 +70,48 @@ function App() {
             <Table sx={{ minWidth: 650 }} aria-label="simple table">
               <TableHead>
                 <TableRow>
-                  <TableCell>All Data</TableCell>
-
+                  <TableCell>Fetched Data Are Showing after 10 seceonds</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.map((row) => (
-                  <TableRow
-                    key={row.name}
-                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                  >
+                {selectedData?.length ? selectedData.map((row) => (
+                  <TableRow key={row.name} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
                     <TableCell component="th" scope="row">
                       {row.title}
                     </TableCell>
-
                   </TableRow>
-                ))}
+                )) :
+                  <TableRow>
+                    <TableCell>nai</TableCell>
+                  </TableRow>
+                }
               </TableBody>
             </Table>
           </TableContainer>
         </Container>
-
       }
       {
         <Container fixed>
           <Stack spacing={2}>
-            {/* <Pagination count={page} variant="outlined" color="primary" onClick={() => handlePageClick(page)} /> */}
-            <ul>{
-              Pagination.map(i => <li>{i}</li>)
-            }
+
+            <ul
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                flexDirection: 'row',
+                listStyle: 'none'
+              }}
+            >
+              {Pagination.map((i) => (
+                i <= 50 ?
+                  <li onClick={() => set_view_data(i - 1)} key={i}><Button sx={{ margin: "3px" }} size="small" variant="outlined">{i}</Button></li>
+                  : <li></li>
+              ))}
             </ul>
           </Stack>
         </Container>
       }
-
-
     </div>
-
   );
 }
 
